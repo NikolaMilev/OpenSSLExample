@@ -1,0 +1,2 @@
+	// A line used for testing the server. Change 8080 if the port number changes. Clientboth contains both the client key and the certificate.
+ openssl s_client -connect localhost:8080 -ssl3 -CAfile ca-chain.cert.pem -cert clientboth.pem
