@@ -13,6 +13,12 @@ SSL_CTX *setup_client_ctx(void)
 	SSL_CTX *ctx;
 	ctx = SSL_CTX_new(SSL_METHOD_);
 
+	if(ctx == NULL)
+	{
+		int_error("The creation of a new SSL_CTX object failed.");
+	}
+	SSL_CTX_set_options(ctx, SSL_CTX_FLAGS_);
+
 	if (SSL_CTX_load_verify_locations(ctx, CAFILE, CADIR) != 1)
 	{	
 		int_error("Error loading CA file and/or directory");
@@ -45,7 +51,6 @@ int do_client_loop(SSL *ssl)
 		{
 			break;
 		}
-		//printf("ucitao: %s\n", buf);
 		for (nwritten = 0; nwritten < sizeof(buf); nwritten += err)
 		{
 

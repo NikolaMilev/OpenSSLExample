@@ -3,9 +3,11 @@
 
 #define BUF_SIZE_ 80
 
+//If the key and the certificate are in the same file, these two can be the same
 #define CERTFILE "certificates/server.cert.pem"
 #define KEYFILE "certificates/server.key.pem"
 
+//One of the two values below can be NULL but not both
 #define CAFILE "certificates/ca-chain.cert.pem"
 #define CADIR NULL
 
@@ -13,12 +15,19 @@
 SSL_CTX *setup_server_ctx(void)
 {
 	SSL_CTX *ctx;
-
-	//This specifies that either SSL or TLS can be used
-	//Later, we will "filter" out SSLv2
-	ctx = SSL_CTX_new(SSLv23_method());
 	
-	//These two functions are used to load trusted CAs
+	// This specifies that either SSL or TLS can be used
+	// Later, we will "filter" out SSLv2
+	ctx = SSL_CTX_new(SSL_METHOD_);
+
+	// NULL return value indicates a failure in creation of SSL_CTX object
+	if(ctx == NULL)
+	{
+		int_error("The creation of a new SSL_CTX object failed.");
+	}
+	SSL_CTX_set_options(ctx, SSL_CTX_FLAGS_);
+
+	// These two functions are used to load trusted CAs
 	if (SSL_CTX_load_verify_locations(ctx, CAFILE, CADIR) != 1)
 	{
 		int_error("Error loading CA file and/or directory");
@@ -27,18 +36,20 @@ SSL_CTX *setup_server_ctx(void)
 	{
 		int_error("Error loading default CA file and/or directory");
 	}
-	
-	//This loads a certificate from a file
+
+	// This loads a certificate from a file
 	if (SSL_CTX_use_certificate_chain_file(ctx, CERTFILE) != 1)
 	{
 			int_error("Error loading certificate from file");
 	}
-	//This loads a private key (in our code, from the same file but I think that it is not necessary)
+	// This loads a private key (in our code, from the same file but I think that it is not necessary)
 	if (SSL_CTX_use_PrivateKey_file(ctx, KEYFILE, SSL_FILETYPE_PEM) != 1)
 	{
 			int_error("Error loading private key from file");
 	}
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER|SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
+	// Setting the verify options for ctx context
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, verify_callback);
+	// Setting the maximum allowed depth for CA verification
 	SSL_CTX_set_verify_depth(ctx, DEFAULT_DEPTH_);
 
 	return ctx;
@@ -60,9 +71,13 @@ int do_server_loop(SSL *ssl)
 				break;
 			}
 		}
-		fwrite(buf, sizeof(char), nread, stdout);
+		
 
 	} while (err > 0);
+
+	fwrite(buf, sizeof(char), nread, stdout);
+	// SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN != 0 indicate that the shutdown notification
+	// was sent from the peer (in this case, the client)
 	return (SSL_get_shutdown(ssl) & SSL_RECEIVED_SHUTDOWN) ? 1 : 0;
 }
 
@@ -82,8 +97,10 @@ void server_part(SSL *ssl)
 		int_error("Error checking SSL object after connection");
 	}
 	fprintf(stderr, "SSL Connection opened\n");
-	//As I figured, SSL_shutdown is a clean way to go but SSL_clear 
-	//will force the closing of the communication if it wasn't closed cleanly
+	// As I figured, SSL_shutdown is a clean way to go but SSL_clear 
+	// will force the closing of the communication if it wasn't closed cleanly
+	// Both will keep the ssl object ready to be used again
+
 	if (do_server_loop(ssl))
 	{
 		//See this https://www.openssl.org/docs/manmaster/ssl/SSL_shutdown.html
@@ -111,18 +128,23 @@ int main(int argc, char *argv[])
 	SEED_PRNG_();
 
 
+	//This call does the setup of the server context (see the functiont for more info)
 	ctx = setup_server_ctx();
+
+	// Creates BIO and sets the accept port
 	acc = BIO_new_accept(PORT);
 	if (!acc)
 	{
 		int_error("Error creating server socket");
 	}
+	//The first call to BIO_do_accept() binds to the given port 
 	if (BIO_do_accept(acc) <= 0)
 	{
 		int_error("Error binding server socket");
 	}
 	for (;;)
 	{
+		//The second BIO_do_accept() call listens on the acc BIO 
 		if (BIO_do_accept(acc) <= 0)
 		{
 			int_error("Error accepting connection");
