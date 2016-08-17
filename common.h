@@ -1,4 +1,4 @@
-#include <openssl/bio.h>
+//#include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/ssl.h>
@@ -8,8 +8,8 @@
 
 
 #define PORT "8080"
-#define SERVER "localhost"
-#define CLIENT "localhost"
+#define SERVER "localhost" 	//"192.168.10.146" - PI
+#define CLIENT "localhost" 	//"192.168.10.132" - laptop
 #define int_error(msg) handle_error(__FILE__, __LINE__, msg)
 
 // Do not confuse with SSL_METHOD ; TLSv1_method() is also a viable option here

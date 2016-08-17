@@ -1,5 +1,5 @@
- #include "common.h"
-
+#include "common.h"
+#include <signal.h>
 
 #define BUF_SIZE_ 80
 
@@ -12,6 +12,14 @@
 #define CADIR NULL
 
 
+static void intsig(int signo) 
+{
+	printf("\npoyy\n");
+	//signal(SIGINT, intsig);
+	fflush(stdout);	
+	//exit(EXIT_FAILURE);
+}
+
 SSL_CTX *setup_server_ctx(void)
 {
 	SSL_CTX *ctx;
@@ -19,6 +27,12 @@ SSL_CTX *setup_server_ctx(void)
 	// This specifies that either SSL or TLS can be used
 	// Later, we will "filter" out SSLv2
 	ctx = SSL_CTX_new(SSL_METHOD_);
+
+	// if(signal(SIGINT, intsig) == SIG_ERR)
+	// {
+	// 	printf("\nError setting signal!\n");
+
+	// }
 
 	// NULL return value indicates a failure in creation of SSL_CTX object
 	if(ctx == NULL)
@@ -161,3 +175,4 @@ int main(int argc, char *argv[])
 	BIO_free(acc);
 	return 0;
 }
+
